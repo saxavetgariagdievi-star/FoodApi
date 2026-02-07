@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/*
+
+jobs:
+  backend:
+    name: Build & Test .NET
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore ./FoodApi/FoodApi.csproj
+
+      - name: Build
+        run: dotnet build ./FoodApi/FoodApi.csproj --no-restore
+
+      - name: Test
+        run: dotnet test ./FoodApi/FoodApi.csproj --no-build --verbosity normal
+
+  frontend:
+    name: Build & Test Angular
+    runs-on: ubuntu-latest
+    needs: backend   # Backend iş bitəndən sonra frontend işə düşsün
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.19.6   # Dəqiq versiya
+
+      - name: Install Angular dependencies
+        run: npm install
+        working-directory: ./FoodApp
+
+      - name: Build Angular
+        run: npm run build
+        working-directory: ./FoodApp
+
+      - name: Run Angular tests
+        run: npm run test -- --watch=false --browsers=ChromeHeadless
+        working-directory: ./FoodApp
